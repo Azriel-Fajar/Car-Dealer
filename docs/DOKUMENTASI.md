@@ -53,7 +53,7 @@ Asumsi: Windows, XAMPP terpasang. Perintah di bawah memakai Git Bash.
 2. Hapus `C:\xampp\php` dari **System PATH** (Settings, System, About, Advanced system settings, Environment Variables, System variables, Path). Apache dan phpMyAdmin XAMPP tetap jalan karena memakai modul PHP-nya sendiri.
 3. Pada setiap sesi Git Bash yang menjalankan `php`, `composer`, `artisan`, atau `npm run build`/`dev`, awali dengan:
     ```bash
-    export PATH="/c/Users/afw14/.config/herd-lite/bin:$PATH"
+    export PATH="$HOME/.config/herd-lite/bin:$PATH"
     ```
     Alasannya: composer dari ComposerSetup di PATH crash di PHP 8.5, dan plugin Wayfinder untuk Vite memanggil `php artisan wayfinder:generate`. Di PowerShell: `$env:Path = "$env:USERPROFILE\.config\herd-lite\bin;$env:Path"`.
 4. Cek: `php -v` (8.5.x), `composer -V`.
@@ -80,12 +80,13 @@ Asumsi: Windows, XAMPP terpasang. Perintah di bawah memakai Git Bash.
 ### 3. Migrasi, seed, dan menjalankan aplikasi
 
 ```bash
-export PATH="/c/Users/afw14/.config/herd-lite/bin:$PATH"
+export PATH="$HOME/.config/herd-lite/bin:$PATH"
 composer install
 npm install
 php artisan key:generate
 php artisan migrate
 php artisan db:seed
+php artisan storage:link
 composer run dev
 ```
 
@@ -456,7 +457,7 @@ Pipeline lengkap 14 gerbang ada di [FLOWCHART.md](FLOWCHART.md#pipeline-ai-advis
 
 Test PHP memakai gaya kelas (`class XTest extends Tests\TestCase`, `use RefreshDatabase`, metode `test_*`) dan dijalankan oleh Pest. Test berjalan pada SQLite `:memory:` (`phpunit.xml`: `DB_CONNECTION=sqlite`, `DB_DATABASE=:memory:`, `SESSION_DRIVER=array`, `CACHE_STORE=array`, `MAIL_MAILER=array`), jadi tidak menyentuh database `car_dealer`.
 
-Perintah (awali dengan `export PATH="/c/Users/afw14/.config/herd-lite/bin:$PATH"` untuk yang memakai PHP):
+Perintah (awali dengan `export PATH="$HOME/.config/herd-lite/bin:$PATH"` untuk yang memakai PHP):
 
 | Perintah                     | Fungsi                                                                                        |
 | ---------------------------- | --------------------------------------------------------------------------------------------- |
@@ -507,7 +508,7 @@ _(Direncanakan — Fase 8, bonus)_ Ringkasan dari spesifikasi: Vercel bersifat s
 | Masalah                                                                                     | Penyebab dan solusi                                                                                                                                                                                                                                                                                                                              |
 | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `php -v` menampilkan 8.2 (XAMPP)                                                            | `C:\xampp\php` masih ada di System PATH dan menang atas PHP 8.5. Hapus dari PATH (lihat Setup Lokal), buka terminal baru. Sementara itu gunakan prefix PATH herd-lite                                                                                                                                                                            |
-| `composer` crash di PHP 8.5                                                                 | Composer dari ComposerSetup di PATH tidak kompatibel. Awali perintah dengan `export PATH="/c/Users/afw14/.config/herd-lite/bin:$PATH"` (PowerShell: `$env:Path = "$env:USERPROFILE\.config\herd-lite\bin;$env:Path"`). Berlaku juga untuk `npm run build`, `npm run dev`, dan `composer run dev` karena plugin Wayfinder memanggil `php artisan` |
+| `composer` crash di PHP 8.5                                                                 | Composer dari ComposerSetup di PATH tidak kompatibel. Awali perintah dengan `export PATH="$HOME/.config/herd-lite/bin:$PATH"` (PowerShell: `$env:Path = "$env:USERPROFILE\.config\herd-lite\bin;$env:Path"`). Berlaku juga untuk `npm run build`, `npm run dev`, dan `composer run dev` karena plugin Wayfinder memanggil `php artisan` |
 | Error karena `intl` tidak ada (`NumberFormatter`, `Number::format()`, `Number::currency()`) | PHP 8.5.13 di setup ini tanpa ekstensi `intl`. Itulah alasan `App\Support\Rupiah` dibuat; jangan memakai API Laravel yang membutuhkan `intl`                                                                                                                                                                                                     |
 | Port bentrok                                                                                | `composer run dev` memakai port 8000, sedangkan Apache XAMPP di port 80. Buka `http://localhost:8000` untuk aplikasi dan `http://localhost/phpmyadmin` untuk phpMyAdmin                                                                                                                                                                          |
 | Gambar upload tidak tampil                                                                  | Jalankan `php artisan storage:link` agar `public/storage` mengarah ke `storage/app/public` _(relevan mulai Fase 2)_                                                                                                                                                                                                                              |
