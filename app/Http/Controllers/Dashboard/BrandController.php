@@ -19,7 +19,7 @@ class BrandController extends Controller
         $q = $request->string('q')->trim()->toString();
 
         $items = Brand::query()
-            ->withCount('cars')
+            ->withCount(['cars' => fn ($query) => $query->withTrashed()])
             ->when($q !== '', fn ($query) => $query->where('name', 'like', "%{$q}%"))
             ->orderBy('name')
             ->paginate(10)
@@ -67,7 +67,7 @@ class BrandController extends Controller
 
     public function destroy(Brand $brand): RedirectResponse
     {
-        $carsCount = $brand->cars()->count();
+        $carsCount = $brand->cars()->withTrashed()->count();
 
         if ($carsCount > 0) {
             Inertia::flash('toast', ['type' => 'error', 'message' => "Brand masih dipakai {$carsCount} mobil."]);

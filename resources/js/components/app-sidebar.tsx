@@ -1,5 +1,13 @@
 import { Link, usePage } from '@inertiajs/react';
-import { ExternalLink, LayoutGrid, Tags } from 'lucide-react';
+import {
+    CarFront,
+    ExternalLink,
+    Layers,
+    LayoutGrid,
+    Store,
+    Tags,
+    Users,
+} from 'lucide-react';
 import AppLogo from '@/components/app-logo';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
@@ -17,6 +25,10 @@ import { navItemsFor } from '@/lib/dashboard-nav';
 import type { DashboardNavItem } from '@/lib/dashboard-nav';
 import { dashboard, home } from '@/routes';
 import { index as brandsIndex } from '@/routes/dashboard/brands';
+import { index as carsIndex } from '@/routes/dashboard/cars';
+import { index as categoriesIndex } from '@/routes/dashboard/categories';
+import { index as showroomsIndex } from '@/routes/dashboard/showrooms';
+import { index as usersIndex } from '@/routes/dashboard/users';
 import type { NavItem } from '@/types';
 
 const mainNavItems: DashboardNavItem[] = [
@@ -30,9 +42,33 @@ const mainNavItems: DashboardNavItem[] = [
 
 const masterDataNavItems: DashboardNavItem[] = [
     {
+        title: 'Mobil',
+        href: carsIndex(),
+        icon: CarFront,
+        roles: ['admin'],
+    },
+    {
         title: 'Brand',
         href: brandsIndex(),
         icon: Tags,
+        roles: ['admin'],
+    },
+    {
+        title: 'Kategori',
+        href: categoriesIndex(),
+        icon: Layers,
+        roles: ['admin'],
+    },
+    {
+        title: 'Showroom',
+        href: showroomsIndex(),
+        icon: Store,
+        roles: ['admin'],
+    },
+    {
+        title: 'Pengguna',
+        href: usersIndex(),
+        icon: Users,
         roles: ['admin'],
     },
 ];

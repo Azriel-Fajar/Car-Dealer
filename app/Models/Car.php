@@ -63,6 +63,8 @@ class Car extends Model
     /** @use HasFactory<CarFactory> */
     use HasFactory, SoftDeletes;
 
+    public const REVERTED_TO_DRAFT_MESSAGE = 'Mobil dikembalikan ke draft karena tidak punya foto/warna.';
+
     /**
      * @return array<string, mixed>
      */
@@ -133,6 +135,21 @@ class Car extends Model
     public function options(): HasMany
     {
         return $this->hasMany(CarOption::class);
+    }
+
+    /**
+     * A published car must keep at least one photo and one color; when it loses
+     * the last of either it goes back to draft. Returns whether it was reverted.
+     */
+    public function revertToDraftIfIncomplete(): bool
+    {
+        if ($this->status !== CarStatus::Published || ($this->images()->exists() && $this->colors()->exists())) {
+            return false;
+        }
+
+        $this->update(['status' => CarStatus::Draft]);
+
+        return true;
     }
 
     /**

@@ -158,6 +158,23 @@ class BrandCrudTest extends TestCase
         $this->assertModelExists($brand);
     }
 
+    public function test_destroy_blocked_when_brand_only_has_soft_deleted_cars(): void
+    {
+        $brand = Brand::factory()->create(['name' => 'Toyota', 'slug' => 'toyota']);
+        Car::factory()->for($brand)->create()->delete();
+
+        $this->actingAs($this->admin)
+            ->get(route('dashboard.brands.index'))
+            ->assertInertia(fn (Assert $page) => $page->where('items.data.0.cars_count', 1));
+
+        $this->actingAs($this->admin)
+            ->delete(route('dashboard.brands.destroy', $brand))
+            ->assertRedirect(route('dashboard.brands.index'))
+            ->assertInertiaFlash('toast', ['type' => 'error', 'message' => 'Brand masih dipakai 1 mobil.']);
+
+        $this->assertModelExists($brand);
+    }
+
     public function test_destroy_deletes_brand_and_logo(): void
     {
         $path = UploadedFile::fake()->image('logo.png')->store('brands', 'public');

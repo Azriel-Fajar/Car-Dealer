@@ -1,6 +1,6 @@
 # Dokumentasi Teknis — Pemecut Motors
 
-> Draf Fase 1 (Foundation). Dokumen ini diperbarui di akhir setiap fase dan difinalisasi di Fase 7. Bagian yang dikerjakan di fase berikutnya ditandai `_(Direncanakan — Fase N)_` beserta ringkasan dari spesifikasi (`docs/superpowers/specs/2026-11-20-car-dealer-design.md`). Diagram ada di [FLOWCHART.md](FLOWCHART.md).
+> Draf Fase 2 (Catalog domain). Dokumen ini diperbarui di akhir setiap fase dan difinalisasi di Fase 7. Bagian yang dikerjakan di fase berikutnya ditandai `_(Direncanakan — Fase N)_` beserta ringkasan dari spesifikasi (`docs/superpowers/specs/2026-11-20-car-dealer-design.md`). Diagram ada di [FLOWCHART.md](FLOWCHART.md).
 
 ## Ringkasan Proyek & Pemetaan Syarat Tugas
 
@@ -14,9 +14,9 @@ Pemetaan ke syarat tugas dosen:
 | 2     | MySQL via phpMyAdmin                                        | MariaDB 10.4 (XAMPP), database `car_dealer`, bisa dilihat di phpMyAdmin                                                                                                                                                | `.env` (`DB_CONNECTION=mysql`, `DB_DATABASE=car_dealer`), `database/migrations/`                                         |
 | 3     | Minimal 2 role berbeda                                      | 3 role: `admin`, `sales`, `customer`                                                                                                                                                                                   | `app/Enums/Role.php`, kolom `users.role`                                                                                 |
 | 4     | Autentikasi session; user lain tidak boleh punya akses sama | Fortify + `SESSION_DRIVER=database` + tabel `sessions` + middleware `EnsureRole` (`role:customer`, `role:admin,sales`)                                                                                                 | `app/Providers/FortifyServiceProvider.php`, `config/session.php`, `app/Http/Middleware/EnsureRole.php`, `routes/web.php` |
-| 5     | Semua fitur CRUD                                            | Fase 1 baru fondasi. Rencana CRUD: Cars (+warna/opsi/gambar/hotspot), Brands, Categories, Showrooms, Users (full CRUD oleh admin); Orders; Payments; Test drives; Inquiries; Wishlist _(Direncanakan — Fase 2 s.d. 5)_ | Lihat bagian "Fitur per Halaman & Daftar CRUD"                                                                           |
+| 5     | Semua fitur CRUD                                            | Sudah berjalan (Fase 2), semuanya oleh admin di `/dashboard`: CRUD Brands, Categories, Showrooms, Users, dan Cars (+warna, opsi, foto, hotspot; hapus bersifat soft delete + pulihkan). Orders, Payments, Test drives, Inquiries, Wishlist menyusul _(Direncanakan — Fase 3 s.d. 5)_ | Lihat bagian "Fitur per Halaman & Daftar CRUD"; `app/Http/Controllers/Dashboard/`, `tests/Feature/Dashboard/` |
 | 6     | Sesuai tema                                                 | Dealer mobil: katalog, configurator, checkout booking fee, test drive, AI advisor                                                                                                                                      | Spesifikasi, bagian "Halaman & desain"                                                                                   |
-| 7     | Tampilan + fungsionalitas sesuai alur bisnis                | Tiga layout (public, account, dashboard), alur order dengan state machine _(Direncanakan — Fase 4/5)_                                                                                                                  | `resources/js/layouts/`, [FLOWCHART.md](FLOWCHART.md)                                                                    |
+| 7     | Tampilan + fungsionalitas sesuai alur bisnis                | Tiga layout (public, account, dashboard), dashboard master data sudah berjalan; alur order dengan state machine _(Direncanakan — Fase 4/5)_                                                                                                                  | `resources/js/layouts/`, [FLOWCHART.md](FLOWCHART.md)                                                                    |
 | 8     | Kode di GitHub                                              | `github.com/Azriel-Fajar/Car-Dealer` (repo ini)                                                                                                                                                                        | `.git` (commit dilakukan manual oleh user)                                                                               |
 | Bonus | Deploy                                                      | Vercel + MySQL cloud _(Direncanakan — Fase 8)_                                                                                                                                                                         | Bagian "Deploy"                                                                                                          |
 
@@ -89,6 +89,8 @@ php artisan db:seed
 php artisan storage:link
 composer run dev
 ```
+
+`php artisan db:seed` membuat akun demo (`DemoUserSeeder`) dan katalog (`CatalogSeeder`: 6 kategori, 7 brand, 3 showroom, 5 mobil `published` dengan warna dan opsi, serta 1 mobil `draft`). Seeder idempoten dan **tidak membuat file gambar**: mobil seed tampil dengan placeholder siluet sampai foto diunggah lewat dashboard. `php artisan storage:link` wajib agar upload di disk `public` bisa diakses lewat `/storage`. Untuk mengosongkan lalu mengisi ulang database dev: `php artisan migrate:fresh --seed`.
 
 Aplikasi berjalan di `http://localhost:8000` (tidak bentrok dengan Apache XAMPP di port 80).
 
@@ -185,7 +187,7 @@ Konfigurasi mobil (warna, velg, interior, paket) yang dibuat guest di configurat
 
 ## Role & Hak Akses
 
-Tiga role, disimpan di kolom `users.role` (enum PHP `App\Enums\Role`: `Admin`, `Sales`, `Customer`). Registrasi publik selalu menghasilkan `customer`; akun admin/sales dibuat lewat seeder atau menu Users oleh admin _(menu Users: Fase 2)_.
+Tiga role, disimpan di kolom `users.role` (enum PHP `App\Enums\Role`: `Admin`, `Sales`, `Customer`). Registrasi publik selalu menghasilkan `customer`; akun admin/sales dibuat lewat seeder atau menu Pengguna (`/dashboard/users`) oleh admin.
 
 Matriks hak akses (dari spesifikasi):
 
@@ -200,7 +202,7 @@ Matriks hak akses (dari spesifikasi):
 | Pakai AI Car Advisor                                                    | ✅ (limit ketat) |    ✅    |  ✅   |  ✅   |
 | Log & statistik AI Advisor, kill switch, budget token                   |        ❌        |    ❌    |  ❌   |  ✅   |
 
-Matriks ini ditegakkan oleh middleware, Policies, dan feature test untuk tiap baris. Di Fase 1 baru baris `/account` dan `/dashboard` yang ada kodenya.
+Matriks ini ditegakkan oleh middleware, Policies, dan feature test untuk tiap baris. Sampai Fase 2 baris `/account`, `/dashboard`, serta master data dan Users (semua `role:admin`, sales mendapat 403) yang ada kodenya.
 
 ### Middleware `role:`
 

@@ -1,6 +1,6 @@
 # Flowchart & Diagram — Pemecut Motors
 
-Diagram di bawah ditulis dengan Mermaid, sehingga tampil otomatis di GitHub, dan akan diekspor ke PNG/SVG untuk laporan di Fase 7. Ini adalah draf Fase 1: yang sudah berjalan hanya alur autentikasi dan arsitektur dasar, sisanya adalah rencana dari spesifikasi dan akan diperbarui di akhir setiap fase. Penjelasan teknis ada di [DOKUMENTASI.md](DOKUMENTASI.md).
+Diagram di bawah ditulis dengan Mermaid, sehingga tampil otomatis di GitHub, dan akan diekspor ke PNG/SVG untuk laporan di Fase 7. Ini adalah draf Fase 2: yang sudah berjalan adalah alur autentikasi, arsitektur dasar, skema katalog, dan alur admin untuk master data mobil, sisanya adalah rencana dari spesifikasi dan akan diperbarui di akhir setiap fase. Penjelasan teknis ada di [DOKUMENTASI.md](DOKUMENTASI.md).
 
 ## Alur Guest → Customer
 
@@ -46,20 +46,31 @@ flowchart TD
 
 ## Alur Admin
 
+Bagian master data (Cars, Brands, Categories, Showrooms, Users) sudah berjalan sejak Fase 2; laporan dan kontrol AI Advisor masih rencana.
+
 ```mermaid
 flowchart TD
     admin(["Admin login"]) --> dashboard["/dashboard"]
-    dashboard --> staff_tasks["Semua tugas sales: verifikasi, orders, test drive, inquiries"]
-    dashboard --> master["Master data"]
+    dashboard --> staff_tasks["Semua tugas sales: verifikasi, orders, test drive, inquiries (Fase 5)"]
+    dashboard --> master["Kelola master data (hanya admin)"]
     dashboard --> users["Users dan role"]
-    dashboard --> reports["Laporan"]
-    dashboard --> advisor["Kontrol AI Advisor"]
-    master --> cars["Cars: info, spesifikasi, warna, opsi, foto, hotspot, stok"]
-    master --> brands["Brands"]
+    dashboard --> reports["Laporan (Fase 5)"]
+    dashboard --> advisor["Kontrol AI Advisor (Fase 6)"]
+    master --> brands["Brands: nama dan logo"]
     master --> categories["Categories"]
-    master --> showrooms["Showrooms"]
-    users --> create_sales["Buat akun sales"]
-    users --> deactivate["Nonaktifkan akun"]
+    master --> showrooms["Showrooms: kota, alamat, koordinat"]
+    master --> cars_new["Cars: tambah mobil baru"]
+    cars_new --> draft["Tersimpan sebagai draft"]
+    draft --> fill_media["Tab Foto dan Warna, opsi, hotspot"]
+    fill_media --> ready{"Minimal 1 foto dan 1 warna?"}
+    ready -->|belum| draft
+    ready -->|ya| publish["Ubah status ke published (tayang)"]
+    publish --> sold_out["Stok habis: sold_out"]
+    publish -->|hapus foto atau warna terakhir| draft
+    publish --> trash["Hapus: soft delete, bisa dipulihkan"]
+    trash -->|restore| draft
+    users --> create_sales["Buat akun admin, sales, atau customer"]
+    users --> deactivate["Nonaktifkan akun (bukan diri sendiri, bukan admin aktif terakhir)"]
     reports --> sales_chart["Grafik penjualan per bulan"]
     reports --> revenue["Revenue"]
     reports --> top_model["Top model"]
@@ -196,6 +207,7 @@ erDiagram
     users ||--o{ ai_chat_logs : "mengirim"
     brands ||--o{ cars : "memiliki"
     categories ||--o{ cars : "mengelompokkan"
+    showrooms ||--o{ cars : "unit di showroom (nullable)"
     cars ||--o{ car_images : "memiliki"
     cars ||--o{ car_colors : "memiliki"
     cars ||--o{ car_options : "memiliki"
@@ -216,7 +228,7 @@ erDiagram
     users ||--o{ test_drives : "ditangani sales"
     users ||--o{ inquiries : "ditangani"
 
-    %% Fase 1 (sudah ada): users. Tabel lain direncanakan.
+    %% Sudah ada: users (Fase 1) dan tabel katalog (Fase 2). Tabel lain direncanakan.
     users {
         bigint id PK
         string name
@@ -228,7 +240,7 @@ erDiagram
         string password
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     brands {
         bigint id PK
         string name
@@ -236,14 +248,14 @@ erDiagram
         string logo_path
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     categories {
         bigint id PK
         string name
         string slug UK
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     showrooms {
         bigint id PK
         string name
@@ -254,26 +266,37 @@ erDiagram
         decimal lng
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     cars {
         bigint id PK
         bigint brand_id FK
         bigint category_id FK
+        bigint showroom_id FK "nullable, null saat showroom dihapus"
         string name
         string slug UK
-        int year
-        bigint base_price
-        enum fuel_type
-        enum transmission
-        enum condition
+        smallint year
+        bigint base_price "rupiah"
+        enum fuel_type "petrol, diesel, hybrid, electric"
+        enum transmission "manual, automatic, cvt, dct"
+        string engine
+        smallint power_hp
+        smallint torque_nm
+        decimal accel_0_100 "nullable"
+        smallint top_speed
+        int range_km "nullable"
+        tinyint seats
+        int mileage_km
+        enum condition "new, used"
         int stock
-        enum badge
-        enum status
-        json hotspots
+        enum badge "new, verified, electric, classic, hot; nullable"
+        enum status "draft, published, sold_out"
+        text description
+        json hotspots "maks 8 titik x y title description"
         boolean is_featured
+        datetime deleted_at "soft delete"
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     car_images {
         bigint id PK
         bigint car_id FK
@@ -282,23 +305,23 @@ erDiagram
         boolean is_cover
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     car_colors {
         bigint id PK
         bigint car_id FK
         string name
-        string hex
+        char hex "7 karakter, mis. #1A2B3C"
         bigint price_delta
         string image_path
     }
 
-    %% Direncanakan Fase 2
+    %% Fase 2 (sudah ada)
     car_options {
         bigint id PK
         bigint car_id FK
-        enum group
+        enum group "wheels, interior, package"
         string name
-        text description
+        string description "maks 300 karakter"
         bigint price
         string image_path
     }
@@ -437,7 +460,7 @@ flowchart LR
         routes["Routes (routes/web.php)"]
         mw["Middleware: role, EnsureUserIsActive, SecurityHeaders"]
         controllers["Controllers dan Fortify"]
-        services["Services dan Policies (Fase 2 dst)"]
+        services["Services dan Policies (rencana, Fase 4 dst)"]
         routes --> mw --> controllers --> services
     end
 
